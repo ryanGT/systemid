@@ -1,0 +1,42 @@
+===============================
+System Identification in Python
+===============================
+
+notes
+======
+- work on step example and getting it working
+- will need to work out plotting and systemid
+- need to work out how to set up response objects
+
+Dependencies
+============
+- python_
+- _controls module_
+- sympy_ (gui only)
+- scipy and numpy_
+- wxpython_ (gui only)
+- matplotlib_
+
+_http://www.python.org/
+_http://www.siue.edu/~rkrauss/python_intro.html
+_http://code.google.com/p/sympy/
+_http://www.scipy.org/
+_http://www.scipy.org/
+_http://matplotlib.sourceforge.net/
+
+
+todo list
+=========
+- Over ride Model operators to allow multiplying and feedback.
+- Gui
+-- Frequcency data support.
+-- Multi-file support.
+- Finish data and response objects
+- start version control and make available on web
+
+Done or Canceled
+~~~~~~~~~~~~~~~~
+- work out plotting module
+- loosely couple the broken gui with system id and make functional
+again.
+- document and examples

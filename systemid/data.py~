@@ -1,0 +1,494 @@
+from numpy import argmax,loadtxt,arctan2,pi,arange,zeros,array,log10,imag,real
+from numpy.fft import fft 
+import plotting
+
+def t_to_f(t):
+    '''
+    Calculate the frequency array that corresponds to the
+    output array of `numpy.fft.fft`.
+
+    Parameters
+    ----------
+    t : array
+        time array
+
+    Returns
+    -------
+    f : array
+        frequency array
+    '''
+    dt = t[2]-t[1]
+    T = t.max()+dt
+    dt = t[2]-t[1]
+    T = t.max()-t.min()+dt
+    fs = 1.0/dt
+    df = 1.0/T
+    f = arange(0,fs,df)
+    return f
+
+def f_to_t(f,tstart=0):
+    '''
+    Calculate the time array that corresponds to the
+    input array of `numpy.fft.fft`.
+
+    Parameters
+    ----------
+    f : array
+        frequency array
+
+    Returns
+    -------
+    t : array
+        time array
+    '''
+    df = f[2]-f[1]
+    fs = f.max()-f.min()+dt
+    T = 1.0/df
+    dt = 1.0/fs
+    t = arange(tstart,T,dt)
+    return t
+
+def do_fft(data,t,fixed_sine_freq=False):
+    '''
+    Compute the one-dimensional discrete Fourier Transform using
+    `numpy.fft.fft`
+
+    Parameters
+    ----------
+    data : array_like
+           Data to perform fast fourier transform on.
+    t : array_like
+        Time array corresponding to `data`.
+    fixed_sine_freq : float or int, optional
+                      If `output` is known to be at a given fixed sine
+                      frequency, the value of the fft at the fixed sine
+                      might be the only point of interest and it will be
+                      the only one returned if `fixed_sine_freq` is not None.
+
+    Returns
+    -------
+    frequency_data : frequency_data instance
+    '''
+    U = fft(data)
+    if not fixed_sine_freq:
+        f = t_to_f(t)
+        G = U
+    else:
+        f = fixed_sine_freq
+        NFFT = len(U)
+        u = argmax(abs(U[0:NFFT/2]))
+        G = U[u]
+    return frequency_data(f,G)
+
+
+def read_data_file(filename,usecols,**kwargs):
+    '''Return data columns from a data file read in with scipy.loadtxt().'''
+    how_to_load = {'usecols':usecols,
+                   'skiprows':1,
+                   'unpack':True}
+    how_to_load.update(kwargs)
+    return loadtxt(filename,**how_to_load)
+
+def t_data(t):
+    '''
+    Convenience function for time arrays.
+
+    Parameters
+    ----------
+    t : array_like
+
+    Returns
+    -------
+    dt : float
+         time step
+    T : float
+        maximum time
+    '''
+    dt = t[2]-t[1]
+    T = t.max()+dt
+    return dt,T
+
+def coherence(list_of_xs, list_of_ys,t):
+    '''
+    Need doc string.
+    '''
+    Gxx = autospectral_density(list_of_xs,t)
+    Gyy = autospectral_density(list_of_ys,t)
+    Gxy = crossspectral_density(list_of_xs,list_of_ys,t)
+    return abs(Gxy)**2/Gxx/Gyy
+
+def autospectral_density(list_of_arrays,t):
+    '''
+    Need doc string.
+    '''
+    dt,T = t_data(t)
+    nd = len(list_of_data_objs)
+    sum = zeros(nd)
+    for cur_data in list_of_arrays:
+        Xk = do_fft(cur_data,t)
+        sum+=abs(Xk)**2
+    Gxx = 2.0/nd/T*sum
+    return Gxx
+
+def crossspectral_density(list_of_xs,list_of_ys,t):
+    '''
+    Need doc string.
+    '''
+    dt,T = t_data(t)
+    nd = len(list_of_xs)
+    sum = zeros(nd)
+    for cur_x,cur_y in zip(list_of_data_xs,list_of_ys):
+        Xk = do_fft(cur_x,t)
+        Yk = do_fft(cur_y,t)
+        Xkconj = conjugate()
+        sum+=Xkconj*Yk
+    Gxy = 2.0/nd/T*sum
+    return Gxy
+
+def clean_encoder_signals(A,B,square_wave_mag = 5.0):
+    '''
+    Need doc string.
+    '''
+    Max = square_wave_mag
+    A[A<.5*Max] = 0.0
+    A[A>=.5*Max] = 1.0
+    B[B<.5*Max] = 0.0
+    B[B>=.5*Max] = 1.0
+    return A,B
+
+def decode_encoder(A,B):
+    '''
+    Need doc string.
+    '''
+    i = 1
+    counts = zeros(len(A))
+    counts = counts.tolist()
+    step = 0
+    steptot = 0
+    itterations = 1
+	
+    for i in range(1,len(A)):
+        if A[i] != A[i-1]:
+            if A[i] != B[i]:
+                step += 1.0
+            elif A[i] == B[i]:
+                step += -1.0
+        elif B[i] != B[i-1]:
+            if B[i] == A[i]:
+                step += 1.0
+            if B[i] != A[i]:
+                step += -1.0
+            else:
+                step = 0
+        steptot += step
+        counts[i] = steptot
+        itterations += 1
+    return array(counts)
+
+class data(object):
+    '''
+    Need doc string.
+    '''
+    def resample(self,n):
+        inds = arange(0,len(self.t),n)
+        self.input = self.input[inds]
+        self.t = self.t[inds]
+        self.output = self.output[inds]
+
+class time_data(data):
+    def __init__(self,t,input,output):
+        '''
+        Need doc string.
+        '''
+        self.t = t
+        self.input = input
+        self.output = output
+        self.raw_t = t
+        self.raw_input = input
+        self.raw_output = output
+        self.dt = self.t[2]-self.t[1]
+        self.T = self.t.max()+self.dt
+
+#    def print(self):
+#        '''
+#        I want to be able to do data.print()
+#        from ipython.
+#        '''
+#        pass
+
+    def scale_t(self,value):
+        '''
+        Need doc string.
+        '''
+        self.t = self.t*value
+
+    def scale_input(self,value):
+        '''
+        Need doc string.
+        '''
+        self.input = self.input*value
+
+    def scale_output(self,value):
+        '''
+        Need doc string.
+        '''
+        self.output = self.output*value
+
+    def remove_mean(self):
+        '''
+        Need doc string.
+        '''
+        self.output = self.output-self.output.mean()
+
+    def input_spectrum(self,fixed_sine_freq=False):
+        '''
+        Need doc string.
+        '''
+        return do_fft(self.input,self.t,fixed_sine_freq)
+
+    def ouput_spectrum(self,fixed_sine_freq=False):
+        '''
+        Need doc string.
+        '''
+        return do_fft(self.input,self.t,fixed_sine_freq)
+ 
+    def experimental_transferfunction(self,fixed_sine_freq=False):
+        '''
+        Need doc string.
+        '''
+        U = fft(self.input)
+        Y = fft(self.output)
+        if not fixed_sine_freq:
+            f = t_to_f(self.t)
+            exp_tf = Y/U
+        else:
+            f = fixed_sine_freq
+            NFFT = len(U)
+            u = argmax(abs(U[0:NFFT/2]))
+            exp_tf = Y[u]/U[u]
+        return frequency_data(f,exp_tf)
+        
+    def plot_raw_input(self,**plot_options):
+        '''
+        Need doc string.
+        '''
+        return plotting.plot_time(self.raw_t,self.raw_input,**plot_options)        
+
+    def plot_raw_output(self,**plot_options):
+        '''
+        Need doc string.
+        '''
+        return plotting.plot_time(self.raw_t,self.raw_output,**plot_options)        
+
+    def plot_raw(self,**plot_options):
+        '''
+        Need doc string.
+        '''
+        self.plot_raw_input(**plot_options)
+        plot_options['clear']=False
+        self.plot_raw_output(**plot_options)
+
+    def plot_input(self,**plot_options):
+        '''
+        Need doc string.
+        '''
+        return plotting.plot_time(self.t,self.input,**plot_options)
+
+    def plot_output(self,**plot_options):
+        '''
+        Need doc string.
+        '''
+        return plotting.plot_time(self.t, self.output,**plot_options)
+
+class encoder_time_data(time_data):
+    def __init__(self,t,input,A,B):
+        '''
+        Need doc string.
+        '''
+        self.t = self.encoder_t = t
+        self.input = input
+        self.A = A
+        self.B = B
+
+    def clean(self,square_wave_mag=5.0):
+        '''
+        Need doc string.
+        '''
+        self.A,self.B = clean_encoder_signals(self.A,self.B,\
+                                                  square_wave_mag = square_wave_mag)
+
+    def decode(self):
+        '''
+        Need doc string.
+        '''
+        self.output = decode_encoder(self.A,self.B)
+        time_data.__init__(self,self.t,self.input,self.output)
+
+    def plot_A(self,**plot_options):
+        plotting.plot_time(self.encoder_t,self.A,**plot_options)
+
+    def plot_B(self,**plot_options):
+        plotting.plot_time(self.encoder_t,self.B,**plot_options)
+
+    def plot_AB(self,**plot_options):
+        self.plot_A(**plot_options)
+        plot_options['clear']=False
+        self.plot_B(**plot_options)
+        
+class frequency_data(data):
+    def __init__(self,f,spectrum):
+        '''
+        Need doc string.
+        '''
+        self.f = f
+        self.spectrum = spectrum
+
+    def calc_magnitude(self):
+        '''
+        Need doc string.
+        '''
+        self.M = abs(self.spectrum)
+        
+    def calc_phase(self):
+        '''
+        Need doc string.
+        '''
+        self.phase = arctan2(imag(self.spectrum),real(self.spectrum))
+
+    def M_in_db(self):
+        '''
+        Need doc string.
+        '''
+        if not hasattr(self,'M'):
+            self.calc_magnitude()
+        self.dbM = 20*log10(self.M)
+        return self.dbM
+        
+    def phi_in_deg(self):
+        '''
+        Need doc string.
+        '''
+        if not hasattr(self,'phi'):
+            self.calc_phase()
+        self.phase_deg = self.phase*180.0/pi
+        return self.phase_deg
+
+    def plot_bode(self,**plot_options):
+        '''
+        Need doc string.
+        '''
+        M = self.M_in_db()
+        phi = self.phi_in_deg()
+        f = self.f
+        if not hasattr(freq_data.spectrum,'__len__'):
+            freq_data.spectrum = [freq_data.spectrum]
+        if abs(len(M)-len(f)) < 2 and abs(len(M)-len(f)) > 0:
+            if len(f)<len(M):
+                M = M[:len(f)]
+            else:
+                f = f[:len(M)]
+        elif abs(len(M)-len(f)) > 2:
+            print 'M and f are different lenghts'
+        if abs(len(phi)-len(f)) < 2 and abs(len(phi)-len(f)) > 0:
+            if len(f)<len(phi):
+                phi = phi[:len(f)]
+            else:
+                f = f[:len(phi)]
+        elif abs(len(phi)-len(f)) > 2:
+            print 'phi and f are different lenghts'
+        return plotting.plot_bode(M,phi,f,**plot_options)
+
+class time_data_file(time_data):
+    def __init__(self,filename):
+        '''
+        Need doc string.
+        '''
+        self.filename = filename
+        
+    def read(self,usecols,**kwargs):
+        '''
+        Need doc string.
+        '''
+        self.t,self.input,self.output = read_data_file(self.filename,usecols,**kwargs)
+        time_data.__init__(self,self.t,self.input,self.output)
+
+
+
+class encoder_time_data_file(time_data_file,encoder_time_data):
+    def read(self,usecols,decode=True,clean=True,square_wave_mag=5.0,**kwargs):
+        '''
+        Need doc string.
+        '''
+        t,input,A,B = read_data_file(self.filename,usecols,**kwargs)
+        encoder_time_data.__init__(self,t,input,A,B)
+        if decode:
+            self.clean(square_wave_mag)
+            self.decode()
+        
+
+
+class multiple_data(time_data):
+    def __init__(self,t,inputmat,outputmat):
+        '''
+        Need doc string.
+        '''
+        self.inputmat = inputmat
+        self.outputmat = outputmat
+        self.t = t
+
+    def average(self):
+        '''
+        Need doc string.
+        '''
+        self.input = self.inputmat.mean(axis=1)
+        self.output = self.outputmat.mean(axis=1)
+
+    def calc_coherence(self):
+        '''
+        Need doc string.
+        '''
+        self.coherence = coherence(self.inputmat,self.outputmat,t)
+
+class multiple_data_files(multiple_data):
+    def __init__(self,file_name_list):
+        '''
+        Need doc string.
+        '''
+        self.filenames = file_name_list
+
+    def read_and_average(self,usecols,**kwargs):
+        '''
+        Need doc string.
+        '''
+        inmat = outmat = zeros((th.shape[0], len(self.filenames)))
+        usecols = (tcol,incol,outcol)
+        for j,curfile in enumerate(self.filenames):
+            ct,cin,cout = read_data_file(curfile,usecols,**kwargs)
+            inmat[:,j] = cin
+            outmat[:,j] = cout
+        self.t = ct
+        multiple_data.__init__(self,t,inmat,outmat)
+        self.average()
+
+    def read(self,usecols,**kwargs):
+        '''
+        Need doc string.
+        '''
+        self.read_and_average(usecols,**kwargs)
+
+class multiple_data_encoder_files(multiple_data_files):
+    def read_and_average(self,tcol,incol,Acol,Bcol,**kwargs):
+        '''
+        Need doc string.
+        '''
+        Amat = Bmat = zeros((th.shape[0], len(self.filenames)))
+        usecols = (tcol,incol, Acol,Bcol)
+        for j,curfile in enumerate(self.filenames):
+            ct,cin,cA,cB = read_data_file(curfile,usecols,**kwargs)
+            Amat[:,j] = cA
+            Bmat[:,j] = cB
+        self.t = ct
+        self.input = cin
+        self.A = Amat.mean(axis=1)
+        self.B = Bmat.mean(axis=1)
+

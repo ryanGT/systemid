@@ -1,0 +1,29 @@
+from systemid.testing.pytest import raises
+import systemid.data as data
+
+step = 'step.txt'
+fixed = 'fixed.txt'
+fixed_freq = 5.
+swept = 'swept.txt'
+usecols = (0,2,4)
+A =  20
+p =  200
+num_dict = {'0':'A*p'}
+den_dict = {'2':'1','1':'p','0':'A*p'}
+var_dict = {'A':A,'p':p}
+to_opt_dict = {'A':A,'p':p}
+skiprows = 3
+
+def test_time_data_as_step():
+    step_d = data.time_data_file(step)
+    step_d.read(usecols,skiprows=skiprows)
+    assert step_d.scale_input(5.).input == step_d.input*5.
+    assert step_d.scale_output(5.).input == step_d.output*5.
+    assert step_d.scale_t(5.).t == step_d.t*5.
+    # Need to test d.remove_mean
+    # Need to test d.input_spectrum
+    # Need to test d.output_spectrum
+    # Need to test plot_raw
+    # Need to test plot_raw_input
+    # Need to test plot_raw_output
+
