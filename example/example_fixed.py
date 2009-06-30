@@ -4,6 +4,7 @@ from pylab import figure,show
 from numpy import pi,argmax
 from controls import feedback
 
+#a comment
 A =  10
 p =  12
 A =  20
