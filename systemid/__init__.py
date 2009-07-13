@@ -55,6 +55,7 @@ def print_vars(var_dict):
         if k != '__builtins__':
             print k+' = ',v
 
+
 def fit_time(model,time_data):
     '''
     Optimizes the parameters of `model` to `time_data` using
@@ -153,7 +154,7 @@ def fit_freq(model,freq_data):
     return optimized_dict
 
 class Model(TransferFunction):
-    def __init__(self,num_dict,den_dict,var_dict,opt_dict=False):
+    def __init__(self,num_dict,den_dict,var_dict,opt_dict=False,myvar='s'):
         '''
         Class to represent a model of a linear time invariant
         dynamical system.
@@ -177,13 +178,21 @@ class Model(TransferFunction):
         input : array
                 Input to the system.
         '''
-        self.num_dict = num_dict
-        self.den_dict = den_dict
+        if type(num_dict) == type({}):
+            self.num_dict = num_dict
+        elif type(num_dict) == type(''):
+            self.num_dict = PolyHasher(num_dict,var_dict,myvar=myvar)[1]
+        if type(den_dict) == type({}):
+            self.den_dict = den_dict
+        elif type(den_dict) == type(''):
+            self.den_dict = PolyHasher(den_dict,var_dict,myvar=myvar)[1]
         self.var_dict = var_dict
-        if opt_dict:
+        if opt_dict == False:
             self.opt_dict = opt_dict
-        num = exec_coeffs(num_dict,var_dict)
-        den = exec_coeffs(den_dict,var_dict)
+        if opt_dict == 'all':
+            self.opt_dict = self.var_dict.copy
+        num = exec_coeffs(self.num_dict,var_dict)
+        den = exec_coeffs(self.den_dict,var_dict)
         TransferFunction.__init__(self,num,den)
 
     def __repr__(self, labelstr='systemid.Model'):
