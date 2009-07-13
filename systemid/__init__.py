@@ -127,20 +127,8 @@ def fit_freq(model,freq_data):
                 
                 x = c-d#len(c)
             except:
-                #print 'found outputm'
                 print n
                 print c,d
-            #try:
-            #    len(d)
-            #except:
-            #    print 'found spec'
-            #    print d
-        #print type(outputm)
-        #print type(freq_data.spectrum)
-        #for c in outputm:
-        #    if 
-        #print freq_data.spectrum[0]
-        #print freq_data.spectrum[0]-outputm[0]
         if abs(len(spectrum)-len(outputm))==1:
             if len(spectrum)>len(outputm):
                 spectrum = spectrum[:-1]

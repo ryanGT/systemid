@@ -43,62 +43,6 @@ def VariableStrHasher(varstr):
         vardict[curvar[0]]=float(curvar[1])
     return vardict
 
-def PolyHasher(instr,vardict,myvar='s'):
-    '''Parse a string such as s^2+2s+2 and turn it
-    into a list of coefficients and a dictionary
-    with keys corresponding to the power of myvar and
-    values corresponding to the coefficients.instr. Will most likely
-    come from something like a wx.TextCtrl.
-
-    Parameters
-    ----------
-    instr : string
-        polynomial representation ('s^2+p*s+1')
-
-    Returns
-    -------
-    polylist : list
-           List suitable for poly1d
-    coeff_dict : dictionary
-           Dictionary representation of the polynomial
-    '''
-    polynomial = str2sympypoly(instr,myvar,vardict)
-    coeff_dict = polynomial_as_dict(polynomial)
-    coeff_dict = _fill_coeff_dict(coeff_dict,polynomial.degree)
-    polylst = systemid.utils.exec_coeffs(coeff_dict,vardict)
-    return polylst,coeff_dict
-
-
-def str2sympypoly(instr,myvar,vardict):
-    '''Convert instr (i.e. s*(s+p)) to a sympy Poly instance and expand it.
-    Inputs:  instr - string representation of a polynomial.
-    Outputs: outpoly - sympy Poly instance representing instr'''
-    expr = sympy.sympify(instr)
-    expanded_expr = expr.expand()
-    outpoly = expanded_expr.as_poly(myvar)
-    return outpoly
-    
-def _fill_coeff_dict(coeff_dict,polydegree):
-    '''
-    Fill a polynomial coeff_dict to have values for all degrees up to
-    poly degree. i.e. s^2+1 will not have a representation of 0 for s
-    until coeff_dict is put through this function.
-
-    Parameters
-    ----------
-    coeff_dict : dictionary
-    polydegree : integer
-
-    Returns
-    -------
-    coeff_dict : dictionary
-    '''
-    polydegree=int(polydegree)
-    for c in range(polydegree+1):
-        str_c = str(c)
-        if not coeff_dict.has_key(str_c):
-            coeff_dict[str_c]='0'
-    return coeff_dict
 
 def createOptDict(staticlst,vardict):
     '''
@@ -125,19 +69,6 @@ def createOptDict(staticlst,vardict):
         for csv in staticlst:
             opt_dict.__delitem__(csv)
     return opt_dict
-
-def polynomial_as_dict(polynomial):
-    '''Convert polynomial into dict.
-
-    Parameters
-    ----------
-    polynomial : sympy.Add instance
-
-    Returns
-    -------
-    poly_dict  d :  polynomial as dict mapped to a string
-    '''
-    return  dict(map(lambda x:(str(x[0][0]),str(x[1])),polynomial.as_dict().items()))
 
 
 data_reader_map = {'step':systemid.data.time_data_file,'swept':}
