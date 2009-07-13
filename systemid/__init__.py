@@ -180,17 +180,21 @@ class Model(TransferFunction):
         '''
         if type(num_dict) == type({}):
             self.num_dict = num_dict
+            self.num_str = poly_dict_to_str(self.num_dict,myvar=myvar)
         elif type(num_dict) == type(''):
+            self.num_str = num_dict 
             self.num_dict = PolyHasher(num_dict,var_dict,myvar=myvar)[1]
         if type(den_dict) == type({}):
             self.den_dict = den_dict
+            self.den_str = poly_dict_to_str(self.den_dict,myvar=myvar)
         elif type(den_dict) == type(''):
+            self.den_str = den_dict
             self.den_dict = PolyHasher(den_dict,var_dict,myvar=myvar)[1]
         self.var_dict = var_dict
         if opt_dict == False:
             self.opt_dict = opt_dict
         if opt_dict == 'all':
-            self.opt_dict = self.var_dict.copy
+            self.opt_dict = self.var_dict.copy()
         num = exec_coeffs(self.num_dict,var_dict)
         den = exec_coeffs(self.den_dict,var_dict)
         TransferFunction.__init__(self,num,den)
@@ -199,15 +203,40 @@ class Model(TransferFunction):
         return TransferFunction.__repr__(self,labelstr)
 
     def __add__(self,other):
-        #
-        # This is a little more complicated than
-        # I initially anticipated. Because I need
-        # to somehow recreate num_dict and den_dict
-        # Maybe use sympy?
-        #
-        #added = TransferFunction.__add__(self,other)
-        #return Model(self.num_)
-        pass
+        new_num_str = self.num_str+'+'+other.num_str
+        new_den_str = self.den_str+'+'+other.den_str
+        new_opt_dict = self.opt_dict.copy()
+        new_opt_dict.update(other.opt_dict)
+        new_var_dict = self.var_dict.copy()
+        new_var_dict.update(other.var_dict)
+        return Model(new_num_str,new_den_str,new_var_dict,new_opt_dict,self.myvar)
+
+    def __sub__(self,other):
+        new_num_str = self.num_str+'-'+other.num_str
+        new_den_str = self.den_str+'-'+other.den_str
+        new_opt_dict = self.opt_dict.copy()
+        new_opt_dict.update(other.opt_dict)
+        new_var_dict = self.var_dict.copy()
+        new_var_dict.update(other.var_dict)
+        return Model(new_num_str,new_den_str,new_var_dict,new_opt_dict,self.myvar)
+
+    def __mul__(self,other):
+        new_num_str = '('+self.num_str+')*('+other.num_str+')'
+        new_den_str = '('+self.den_str+')*('+other.den_str+')'
+        new_opt_dict = self.opt_dict.copy()
+        new_opt_dict.update(other.opt_dict)
+        new_var_dict = self.var_dict.copy()
+        new_var_dict.update(other.var_dict)
+        return Model(new_num_str,new_den_str,new_var_dict,new_opt_dict,self.myvar)
+
+    def __div__(self,other):
+        new_num_str = '('+self.num_str+')*('+other.den_str+')'
+        new_den_str = '('+self.den_str+')*('+other.num_str+')'
+        new_opt_dict = self.opt_dict.copy()
+        new_opt_dict.update(other.opt_dict)
+        new_var_dict = self.var_dict.copy()
+        new_var_dict.update(other.var_dict)
+        return Model(new_num_str,new_den_str,new_var_dict,new_opt_dict,self.myvar)
 
     def plot_resp(self,t,input,**plot_options):
         '''

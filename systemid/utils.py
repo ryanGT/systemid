@@ -138,3 +138,20 @@ def _fill_coeff_dict(coeff_dict,polydegree):
             coeff_dict[str_c]='0'
     return coeff_dict
 
+def poly_var_map(power_str,myvar):
+    if power_str == '1':
+        return '*'+myvar
+    elif power_str == '0':
+        return ''
+    else:
+        return '*'+myvar+'**'+power_str
+
+def poly_dict_to_str(in_dict, myvar='s'):
+    keys = in_dict.keys()
+    keys.sort(reverse=True)
+    poly_str = in_dict[keys[0]]+poly_var_map(keys[0],myvar)
+    if len(keys)>1:
+        for key in keys[1:]:
+            poly_str+=in_dict[key]
+            poly_str+=poly_var_map(key,myvar)
+    return poly_str
