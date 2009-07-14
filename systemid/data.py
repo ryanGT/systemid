@@ -300,6 +300,7 @@ class time_data(data_base_class):
         '''
         return plotting.plot_time(self.t, self.output,**plot_options)
 
+
 class encoder_time_data(time_data):
     def __init__(self,t,input,A,B):
         '''
