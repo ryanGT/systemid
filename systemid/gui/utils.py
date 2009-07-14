@@ -71,7 +71,7 @@ def createOptDict(staticlst,vardict):
     return opt_dict
 
 
-data_reader_map = {'step':systemid.data.time_data_file,'swept':}
+data_reader_map = {'step':systemid.data.time_data_file,'swept':systemid.data.time_data_file}
 
 class Model_Data_Handler(object):
     def __init__(self,data_type,filename,usecols,varstr,staticstr,numstr,denstr,f=None,**file_reader_kwargs):

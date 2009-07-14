@@ -1,4 +1,4 @@
-from pylab import figure
+from pylab import figure,show,legend
 
 standard_kwargs = {'fig':None,'legend':None,'clear':True,
                    'fignum':1,'legendpos':4,'linestyle':'-','markersize':12,
@@ -45,7 +45,7 @@ def plot_time(t,y,**kwargs):
     '''
 
     options = {'title':'Time Domain','xlabel':'Time (s)',
-        'ylabel':'y(t)','linelabel':None}
+        'ylabel':'y(t)','label':None}
     options = _combine_dicts(options,standard_kwargs)
     options.update(kwargs)
     if not options['fig']:
@@ -58,8 +58,8 @@ def plot_time(t,y,**kwargs):
     if not hasattr(y[0],'__len__'):
         y = [y]
     for cy in y:
-        ax.plot(t,cy,linestyle=options['linestyle'],label=options['linelabel'],linewidth=options['linewidth'])
-    if options['linelabel']:
+        ax.plot(t,cy,linestyle=options['linestyle'],label=options['label'],linewidth=options['linewidth'])
+    if options['label']:
         ax.legend(loc=0)
         #ax.legend(options['legend'],options['legendpos'])
     ax.set_title(options['title'])
@@ -84,7 +84,7 @@ def plot_bode(M,phi,f,**kwargs):
     fig : instance of `matplotlib.figure.Figure`
     '''
     options = {'title':'Bode Plot', 'xlabel':'Freq. (Hz)',
-               'maglabel':'Mag. Ratio (dB)','linelabel':None,\
+               'maglabel':'Mag. Ratio (dB)','label':None,\
                'phaselabel':'Phase (deg.)','linestyle':'-'}
     options = _combine_dicts(options,standard_kwargs)
     options.update(kwargs)
@@ -109,7 +109,7 @@ def plot_bode(M,phi,f,**kwargs):
     ax2 = fig.add_subplot(212)
     _plot_bode_lines(ax2,f,phi,**options)
     ax2.set_ylabel(options['phaselabel'])
-    if options['linelabel']:
+    if options['label']:
         ax1.legend()#a1.options['legend'],options['legendpos'])
     for ax in fig.axes:
         ax.grid(True)
@@ -130,7 +130,7 @@ def plot_coherence(coh,f,**kwargs):
     fig : instance of `matplotlib.figure.Figure`
     '''
     options = {'title':'Coherence', 'xlabel':'Freq. (Hz)',
-               'ylabel':'$\gamma^2_{xy}(f)$','linelabel':None,\
+               'ylabel':'$\gamma^2_{xy}(f)$','label':None,\
                'phaselabel':'Phase (deg.)','linestyle':'-'}
     options = _combine_dicts(options,standard_kwargs)
     options.update(kwargs)
@@ -155,7 +155,7 @@ def plot_coherence(coh,f,**kwargs):
     ax1 = fig.add_subplot(111)
     _plot_bode_lines(ax1,f,coh,**options)
     ax1.set_ylabel(options['ylabel'])
-    if options['linelabel']:
+    if options['label']:
         ax1.legend()#a1.options['legend'],options['legendpos'])
     for ax in fig.axes:
         ax.grid(True)
@@ -180,5 +180,5 @@ def _plot_bode_lines(ax,x,y,**options):
         #    linestyle='o'
         #else:
         #    linestyle='-'
-        ax.semilogx(x,cy,linestyle=options['linestyle'],marker=options['marker'],label=options['linelabel'])
+        ax.semilogx(x,cy,linestyle=options['linestyle'],marker=options['marker'],label=options['label'])
 

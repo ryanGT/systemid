@@ -1,6 +1,33 @@
 import sympy
+from numpy import asarray
 
-def OptNumDen(opt_values,opt_lst,var_dict,num_dict,den_dict):
+def to_array(a):
+    if not hasattr(a,'__len__'):
+        a = [a]
+    return asarray(a)
+
+def make_same_len_if_close(a,b):
+    '''
+    If len(a)-len(b) == 1 then they are close enough, trim
+    accordingly.
+    '''
+    if abs(len(a)-len(b)) == 1:
+        if len(b)<len(a):
+            a = a[:len(b)]
+        else:
+            b = b[:len(a)]
+    elif abs(len(a)-len(b)) > 1:
+        print 'a and b are different lenghts'
+    return a,b
+
+def var_dict_w_new_values(new_values,model):
+    new_var_dict = dict(zip(model.opt_dict.keys(),new_values)) 
+    for ck,cv in model.var_dict.iteritems():
+        if not new_var_dict.has_key(ck):
+            new_var_dict[ck]=cv
+    return new_var_dict
+
+def OptNumDen(new_values,model):
     '''
     Make two lists `num` and `den` suitable for `poly1d()` and a
     new variable dictionary by comparing the values that are
@@ -32,12 +59,9 @@ def OptNumDen(opt_values,opt_lst,var_dict,num_dict,den_dict):
     Look into using a dictionary as a parameter called `opt_dict`
     in place of the two lists `opt_values` and `opt_lst`.
     '''
-    new_var_dict = dict(zip(opt_lst,opt_values)) 
-    for ck,cv in var_dict.iteritems():
-        if not new_var_dict.has_key(ck):
-            new_var_dict[ck]=cv
-    num = _exec_coeffs(num_dict,new_var_dict)
-    den = _exec_coeffs(den_dict,new_var_dict)
+    new_var_dict = var_dict_w_new_values(new_values,model)
+    num = _exec_coeffs(model.num_dict,new_var_dict)
+    den = _exec_coeffs(model.den_dict,new_var_dict)
     return num,den,new_var_dict
 
 def _exec_coeffs(coeff_dict,vardict):
@@ -48,6 +72,8 @@ def _exec_coeffs(coeff_dict,vardict):
     for k in sorted(coeff_dict.keys(),reverse=True):
         cp = eval(coeff_dict[k],vardict)
         polylst.append(cp)
+    if vardict.has_key('__builtins__'):
+        vardict.__delitem__('__builtins__')
     return polylst
 
 def exec_coeffs(coeff_dict,var_dict):

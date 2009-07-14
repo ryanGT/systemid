@@ -1,8 +1,9 @@
 from numpy import argmax,loadtxt,arctan2,pi,arange,zeros
-from numpy import conjugate,array,log10,imag,real,asarray
+from numpy import conjugate,array,log10,imag,real
 from numpy.fft import fft 
 import plotting
 import pdb
+from utils import make_same_len_if_close, to_array
 
 def t_to_f(t):
     '''
@@ -188,7 +189,7 @@ def decode_encoder(A,B):
         itterations += 1
     return array(counts)
 
-class data(object):
+class data_base_class(object):
     '''
     Need doc string.
     '''
@@ -198,26 +199,19 @@ class data(object):
         self.t = self.t[inds]
         self.output = self.output[inds]
 
-class time_data(data):
+class time_data(data_base_class):
     def __init__(self,t,input,output):
         '''
         Need doc string.
         '''
-        self.t = t
-        self.input = input
-        self.output = output
-        self.raw_t = t
-        self.raw_input = input
-        self.raw_output = output
+        self.t = to_array(t)
+        self.input = to_array(input)
+        self.output = to_array(output)
+        self.raw_t = to_array(t)
+        self.raw_input = to_array(input)
+        self.raw_output = to_array(output)
         self.dt = self.t[2]-self.t[1]
         self.T = self.t.max()+self.dt
-
-#    def print(self):
-#        '''
-#        I want to be able to do data.print()
-#        from ipython.
-#        '''
-#        pass
 
     def scale_t(self,value):
         '''
@@ -311,10 +305,10 @@ class encoder_time_data(time_data):
         '''
         Need doc string.
         '''
-        self.t = self.encoder_t = t
-        self.input = input
-        self.A = A
-        self.B = B
+        self.t = self.encoder_t = to_array(t)
+        self.input = to_array(input)
+        self.A = to_array(A)
+        self.B = to_array(B)
 
     def clean(self,square_wave_mag=5.0):
         '''
@@ -341,22 +335,15 @@ class encoder_time_data(time_data):
         plot_options['clear']=False
         self.plot_B(**plot_options)
         
-class frequency_data(data):
+class frequency_data(data_base_class):
     def __init__(self,f,spectrum):
         '''
         Need doc string.
         '''
-        if not hasattr(f,'__len__'):
-            f = [f]
-        self.f = asarray(f)
-        if not hasattr(spectrum,'__len__'):
-            spectrum = [spectrum]
-        self.spectrum = asarray(spectrum)
-        if abs(len(self.spectrum)-len(self.f))==1:
-            if len(self.spectrum)>len(self.f):
-                self.spectrum = self.spectrum[:-1]
-            else:
-                self.f = self.f[:-1]
+        self.f = to_array(f)
+        self.spectrum = to_array(spectrum)
+        self.M_in_db()
+        self.phase_in_deg()
 
     def trim_at_freq(self,f):
         ind = self.f<f
@@ -373,7 +360,7 @@ class frequency_data(data):
         '''
         Need doc string.
         '''
-        self.phase = arctan2(imag(self.spectrum),real(self.spectrum))
+        self.phase_in_rad = arctan2(imag(self.spectrum),real(self.spectrum))
 
     def M_in_db(self):
         '''
@@ -382,40 +369,40 @@ class frequency_data(data):
         if not hasattr(self,'M'):
             self.calc_magnitude()
         self.dbM = 20*log10(self.M)
-        return self.dbM
         
-    def phi_in_deg(self):
+    def phase_in_deg(self):
         '''
         Need doc string.
         '''
         if not hasattr(self,'phi'):
             self.calc_phase()
-        self.phase_deg = self.phase*180.0/pi
-        return self.phase_deg
+        self.phase_in_deg = self.phase_in_rad*180.0/pi
+        self.phase = self.phase_in_deg
 
     def plot_bode(self,**plot_options):
         '''
         Need doc string.
         '''
-        M = self.M_in_db()
-        phi = self.phi_in_deg()
         f = self.f
-        
-        if abs(len(M)-len(f)) < 2 and abs(len(M)-len(f)) > 0:
-            if len(f)<len(M):
-                M = M[:len(f)]
-            else:
-                f = f[:len(M)]
-        elif abs(len(M)-len(f)) > 2:
-            print 'M and f are different lenghts'
-        if abs(len(phi)-len(f)) < 2 and abs(len(phi)-len(f)) > 0:
-            if len(f)<len(phi):
-                phi = phi[:len(f)]
-            else:
-                f = f[:len(phi)]
-        elif abs(len(phi)-len(f)) > 2:
-            print 'phi and f are different lenghts'
-        return plotting.plot_bode(M,phi,f,**plot_options)
+        dbM,phase = make_same_len_if_close(self.dbM,self.phase)
+        return plotting.plot_bode(dbM,phase,f,**plot_options)
+
+class frequency_data_in_db_w_phase(frequency_data):
+    def __init__(self,f,dbM):
+        self.f = asarray(f)
+        self.dbM = asarray(dbM)
+
+    def calc_magnitude(self):
+        pass
+
+    def calc_phase(self):
+        pass
+
+    def M_in_db(self):
+        pass
+
+    def phase_in_deg(self):
+        pass
 
 class time_data_file(time_data):
     def __init__(self,filename):
@@ -432,7 +419,22 @@ class time_data_file(time_data):
         time_data.__init__(self,self.t,self.input,self.output)
 
 
+class frequency_data_file(frequency_data):
+    def __init__(self,filename):
+        self.filename = filename
 
+    def read(self,usecols,**kwargs):
+        self.f,self.spectrum = read_data_file(self.filename,usecols,**kwargs)
+        frequency_data.__init__(self,self.f,self.spectrum)
+
+class frequency_data_file_in_db_w_phase(frequency_data_in_db_w_phase):
+    def __init__(self,filename):
+        self.filename = filename
+
+    def read(self,usecols,**kwargs):
+        self.f,self.dbM,self.phase = read_data_file(self.filename,usecols,**kwargs)
+        frequency_data.__init__(self,self.f,self.dbM)
+    
 class encoder_time_data_file(time_data_file,encoder_time_data):
     def read(self,usecols,decode=True,clean=True,square_wave_mag=5.0,**kwargs):
         '''
