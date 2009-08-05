@@ -1,4 +1,4 @@
-from numpy import argmax,loadtxt,arctan2,pi,arange,zeros
+from numpy import argmax,loadtxt,arctan2,pi,arange,zeros, squeeze
 from numpy import conjugate,array,log10,imag,real
 from numpy.fft import fft 
 import plotting
@@ -427,6 +427,17 @@ class frequency_data_file(frequency_data):
     def read(self,usecols,**kwargs):
         self.f,self.spectrum = read_data_file(self.filename,usecols,**kwargs)
         frequency_data.__init__(self,self.f,self.spectrum)
+
+class frequency_data_from_rwkbode(frequency_data):
+    """Class to form bridge between the system ID module and the
+    rwkbode data class of Ryan Krauss."""
+    def __init__(self, f, rwkbode_instance):
+        """Initialize a frequency_data_from_rwkbode instance based on
+        a frequency vector and an rwkbode_instance."""
+        self.f = f
+        self.M = squeeze(rwkbode_instance.mag)
+        self.phase = squeeze(rwkbode_instance.phase)
+        self.dbM = squeeze(rwkbode_instance.dBmag())
 
 class frequency_data_file_in_db_w_phase(frequency_data_in_db_w_phase):
     def __init__(self,filename):
