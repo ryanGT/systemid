@@ -89,7 +89,7 @@ def fit_time_cost(model,data):
 def fit_time_opt(c,model,data,cost_function):
     new_var_dict = var_dict_w_new_values(c,model)
     new_model = model.copy(var_dict=new_var_dict)
-    e = cost_function(model,data)
+    e = cost_function(new_model,data)
     return e
 
 def fit_time(model,data,opt_function=fit_time_opt,cost_function=fit_time_cost):
