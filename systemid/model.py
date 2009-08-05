@@ -84,7 +84,7 @@ def optimizer(model,data,opt_function,cost_function,**kwargs):
 def fit_time_cost(model,data):
     model_output = do_lsim(model,data.input,data.t)
     data_output = data.output
-    return sum((model_output-exp_output)**2)
+    return sum((model_output-data_output)**2)
 
 def fit_time_opt(c,model,data,cost_function):
     new_var_dict = var_dict_w_new_values(c,model)

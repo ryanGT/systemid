@@ -83,6 +83,7 @@ def plot_bode(M,phi,f,**kwargs):
     -------
     fig : instance of `matplotlib.figure.Figure`
     '''
+
     options = {'title':'Bode Plot', 'xlabel':'Freq. (Hz)',
                'maglabel':'Mag. Ratio (dB)','label':None,\
                'phaselabel':'Phase (deg.)','linestyle':'-'}
